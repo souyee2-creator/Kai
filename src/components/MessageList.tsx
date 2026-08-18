@@ -3,9 +3,19 @@ import MessageBubble from './MessageBubble';
 
 interface Props {
   messages: Message[];
+  onQuote?: (message: Message) => void;
+  onEdit?: (id: string, newText: string) => void;
+  onDelete?: (message: Message) => void;
+  onReroll?: (message: Message) => void;
 }
 
-export default function MessageList({ messages }: Props) {
+export default function MessageList({
+  messages,
+  onQuote,
+  onEdit,
+  onDelete,
+  onReroll,
+}: Props) {
   return (
     <div className="mx-auto flex max-w-md flex-col">
       {messages.map((msg, i) => {
@@ -19,7 +29,15 @@ export default function MessageList({ messages }: Props) {
 
         return (
           <div key={msg.id} className={marginTop}>
-            <MessageBubble message={msg} isFirst={isFirst} isLast={isLast} />
+            <MessageBubble
+              message={msg}
+              isFirst={isFirst}
+              isLast={isLast}
+              onQuote={onQuote}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onReroll={onReroll}
+            />
           </div>
         );
       })}
