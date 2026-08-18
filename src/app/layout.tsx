@@ -1,10 +1,24 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import BottomNav from '@/components/BottomNav';
 
+export const viewport: Viewport = {
+  themeColor: '#0a0a0f',
+};
+
 export const metadata: Metadata = {
-  title: 'Kai',
+  title: 'Nocturne',
   description: 'AI Companion',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Nocturne',
+  },
+  icons: {
+    icon: '/icon-512.png',
+    apple: '/icon-192.png',
+  },
 };
 
 export default function RootLayout({
