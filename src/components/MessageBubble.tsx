@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Message } from '@/types/message';
 import { formatFileSize } from '@/lib/message-utils';
 
@@ -27,7 +27,9 @@ export default function MessageBubble({
   const [showMenu, setShowMenu] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.content.text || '');
+  const [menuPosition, setMenuPosition] = useState<'above' | 'below'>('below');
   const menuRef = useRef<HTMLDivElement>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
 
   // 气泡圆角：连续消息中间的气泡圆角更小
   const getBubbleRadius = () => {
@@ -44,10 +46,38 @@ export default function MessageBubble({
     }
   };
 
-  // 长按显示菜单
+  // 长按显示菜单，自动判断显示在上方还是下方
   const handleLongPress = () => {
-    if (!editing) setShowMenu(true);
+    if (!editing) {
+      if (bubbleRef.current) {
+        const rect = bubbleRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        // 如果气泡底部距视口底部不足 120px，菜单显示在上方
+        if (viewportHeight - rect.bottom < 120) {
+          setMenuPosition('above');
+        } else {
+          setMenuPosition('below');
+        }
+      }
+      setShowMenu(true);
+    }
   };
+
+  // 点击外部关闭菜单
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleClickOutside = (e: TouchEvent | MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu]);
 
   // 复制文本
   const handleCopy = () => {
@@ -71,14 +101,12 @@ export default function MessageBubble({
     setEditing(true);
     setShowMenu(false);
   };
-
   const handleEditSave = () => {
     if (editText.trim() && editText !== message.content.text) {
       onEdit?.(message.id, editText.trim());
     }
     setEditing(false);
   };
-
   const handleEditCancel = () => {
     setEditText(message.content.text || '');
     setEditing(false);
@@ -122,14 +150,17 @@ export default function MessageBubble({
 
         {/* 消息气泡 */}
         <div
-          className={`relative max-w-[280px] ${getBubbleRadius()} ${
+          ref={bubbleRef}
+          className={`relative max-w-[280px] select-none ${getBubbleRadius()} ${
             isUser ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
           }`}
           onContextMenu={(e) => {
             e.preventDefault();
             handleLongPress();
           }}
-          onTouchStart={() => {
+          onTouchStart={(e) => {
+            // 阻止系统文字选择
+            e.currentTarget.style.webkitUserSelect = 'none';
             const timer = setTimeout(handleLongPress, 500);
             const cancel = () => clearTimeout(timer);
             document.addEventListener('touchend', cancel, { once: true });
@@ -145,7 +176,7 @@ export default function MessageBubble({
 
           {/* 编辑模式 */}
           {editing && (
-            <div className="p-2">
+            <div className="p-2 select-text">
               <textarea
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
@@ -208,52 +239,53 @@ export default function MessageBubble({
           )}
         </div>
 
-        {/* 长按菜单 */}
+        {/* 长按菜单 - 横向排列 */}
         {showMenu && (
           <>
             <div
-              className="fixed inset-0 z-40"
+              className="fixed inset-0 z-[60]"
               onClick={() => setShowMenu(false)}
             />
             <div
               ref={menuRef}
-              className="absolute z-50 bg-white rounded-xl shadow-lg border border-gray-200 py-1 min-w-[140px]"
+              className="absolute z-[70] bg-white rounded-xl shadow-lg border border-gray-200 px-1 py-1.5 flex items-center gap-0.5"
               style={{
                 [isUser ? 'right' : 'left']: 0,
-                top: '100%',
-                marginTop: '4px',
+                ...(menuPosition === 'above'
+                  ? { bottom: '100%', marginBottom: '4px' }
+                  : { top: '100%', marginTop: '4px' }),
               }}
             >
               <button
                 onClick={handleCopy}
-                className="w-full px-4 py-2 text-left text-sm text-gray-900 hover:bg-gray-50"
+                className="px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 rounded-lg whitespace-nowrap"
               >
                 复制
               </button>
               <button
                 onClick={handleQuote}
-                className="w-full px-4 py-2 text-left text-sm text-gray-900 hover:bg-gray-50"
+                className="px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 rounded-lg whitespace-nowrap"
               >
                 引用
               </button>
               {isUser && message.type === 'text' && (
                 <button
                   onClick={handleEditStart}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-900 hover:bg-gray-50"
+                  className="px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 rounded-lg whitespace-nowrap"
                 >
                   编辑
                 </button>
               )}
               <button
                 onClick={handleDelete}
-                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                className="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg whitespace-nowrap"
               >
                 删除
               </button>
               {!isUser && message.groupId && (
                 <button
                   onClick={handleReroll}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-900 hover:bg-gray-50"
+                  className="px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 rounded-lg whitespace-nowrap"
                 >
                   重新生成
                 </button>

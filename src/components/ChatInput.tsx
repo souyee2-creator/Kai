@@ -66,19 +66,6 @@ export default function ChatInput({
         </div>
       )}
 
-      {/* AI 回复按钮 */}
-      {showAiReplyButton && (
-        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
-          <button
-            onClick={onAiReply}
-            disabled={aiReplying}
-            className="w-full py-2 px-4 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {aiReplying ? '回复中...' : `让 Kai 回复 (${unrepliedCount} 条未读)`}
-          </button>
-        </div>
-      )}
-
       {/* 输入区 */}
       <div className="px-4 py-3">
         <div className="mx-auto flex max-w-md items-end gap-2">
@@ -127,17 +114,38 @@ export default function ChatInput({
             </svg>
           </button>
 
-          {/* 发送按钮 */}
-          <button
-            onClick={handleSend}
-            disabled={disabled || aiReplying || !text.trim()}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white transition-opacity disabled:opacity-20"
-            aria-label="发送消息"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 19V5M5 12l7-7 7 7"/>
-            </svg>
-          </button>
+          {/* AI 回复按钮 或 发送按钮 */}
+          {showAiReplyButton ? (
+            <button
+              onClick={onAiReply}
+              disabled={aiReplying}
+              className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-full bg-blue-600 px-3 text-white text-xs font-medium transition-opacity hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="让 Kai 回复"
+              title={`${unrepliedCount} 条未读`}
+            >
+              {aiReplying ? (
+                <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              )}
+              <span>{unrepliedCount}</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={disabled || aiReplying || !text.trim()}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white transition-opacity disabled:opacity-20"
+              aria-label="发送消息"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+            </button>
+          )}
         </div>
       </div>
     </div>
